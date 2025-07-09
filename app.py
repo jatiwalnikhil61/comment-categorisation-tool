@@ -25,8 +25,6 @@ import os
 from datetime import datetime
 import warnings
 import torch
-from transformers import BertTokenizer, BertForSequenceClassification, DistilBertTokenizer, DistilBertForSequenceClassification
-from torch.utils.data import DataLoader, TensorDataset
 
 warnings.filterwarnings('ignore')
 
@@ -55,14 +53,14 @@ if 'model_type' not in st.session_state:
 class CommentCategorizer:
     def __init__(self):
         self.categories = {
-            'Praise': {'label': 'Praise', 'color': '#28a745'},
-            'Support': {'label': 'Support', 'color': '#17a2b8'},
-            'Constructive Criticism': {'label': 'Constructive Criticism', 'color': '#ffc107'},
-            'Hate/Abuse': {'label': 'Hate/Abuse', 'color': '#dc3545'},
-            'Threat': {'label': 'Threat', 'color': '#6f42c1'},
-            'Emotional': {'label': 'Emotional', 'color': '#fd7e14'},
-            'Irrelevant/Spam': {'label': 'Irrelevant/Spam', 'color': '#6c757d'},
-            'Question/Suggestion': {'label': 'Question/Suggestion', 'color': '#20c997'}
+            'praise': {'label': 'Praise', 'color': '#28a745'},
+            'support': {'label': 'Support', 'color': '#17a2b8'},
+            'constructive_criticism': {'label': 'Constructive Criticism', 'color': '#ffc107'},
+            'hate_abuse': {'label': 'Hate/Abuse', 'color': '#dc3545'},
+            'threat': {'label': 'Threat', 'color': '#6f42c1'},
+            'emotional': {'label': 'Emotional', 'color': '#fd7e14'},
+            'spam': {'label': 'Spam/Irrelevant', 'color': '#6c757d'},
+            'question_suggestion': {'label': 'Question/Suggestion', 'color': '#20c997'}
         }
         
         self.lemmatizer = WordNetLemmatizer()
@@ -75,140 +73,140 @@ class CommentCategorizer:
         """Create a default labeled dataset for training"""
         data = [
             # Praise
-            ("Amazing work! Loved the animation.", "Praise"),
-            ("This is absolutely fantastic!", "Praise"),
-            ("Outstanding content, keep it up!", "Praise"),
-            ("Brilliant work, you're so talented!", "Praise"),
-            ("Perfect! This is exactly what I needed.", "Praise"),
-            ("Incredible job on this project!", "Praise"),
-            ("Excellent quality, very impressed!", "Praise"),
-            ("Wonderful work, thank you so much!", "Praise"),
-            ("This is pure gold, amazing!", "Praise"),
-            ("Spectacular work, love every bit of it!", "Praise"),
-            ("Awesome content, you're the best!", "Praise"),
-            ("Beautiful work, truly inspiring!", "Praise"),
-            ("Fantastic job, exceeded my expectations!", "Praise"),
-            ("Superb quality, keep up the great work!", "Praise"),
-            ("Magnificent work, absolutely love it!", "Praise"),
+            ("Amazing work! Loved the animation.", "praise"),
+            ("This is absolutely fantastic!", "praise"),
+            ("Outstanding content, keep it up!", "praise"),
+            ("Brilliant work, you're so talented!", "praise"),
+            ("Perfect! This is exactly what I needed.", "praise"),
+            ("Incredible job on this project!", "praise"),
+            ("Excellent quality, very impressed!", "praise"),
+            ("Wonderful work, thank you so much!", "praise"),
+            ("This is pure gold, amazing!", "praise"),
+            ("Spectacular work, love every bit of it!", "praise"),
+            ("Awesome content, you're the best!", "praise"),
+            ("Beautiful work, truly inspiring!", "praise"),
+            ("Fantastic job, exceeded my expectations!", "praise"),
+            ("Superb quality, keep up the great work!", "praise"),
+            ("Magnificent work, absolutely love it!", "praise"),
             
             # Support
-            ("Keep going, you're doing great!", "Support"),
-            ("Don't give up, you've got this!", "Support"),
-            ("We believe in you!", "Support"),
-            ("Your hard work is paying off!", "Support"),
-            ("Stay strong, you're making progress!", "Support"),
-            ("Keep pushing forward!", "Support"),
-            ("You're on the right track!", "Support"),
-            ("Keep up the good work!", "Support"),
-            ("We're rooting for you!", "Support"),
-            ("You're doing amazing, don't stop!", "Support"),
-            ("Keep at it, you're improving!", "Support"),
-            ("Stay motivated, you're doing well!", "Support"),
-            ("Keep going, we Support you!", "Support"),
-            ("You're making great progress!", "Support"),
-            ("Keep it up, you're doing fantastic!", "Support"),
+            ("Keep going, you're doing great!", "support"),
+            ("Don't give up, you've got this!", "support"),
+            ("We believe in you!", "support"),
+            ("Your hard work is paying off!", "support"),
+            ("Stay strong, you're making progress!", "support"),
+            ("Keep pushing forward!", "support"),
+            ("You're on the right track!", "support"),
+            ("Keep up the good work!", "support"),
+            ("We're rooting for you!", "support"),
+            ("You're doing amazing, don't stop!", "support"),
+            ("Keep at it, you're improving!", "support"),
+            ("Stay motivated, you're doing well!", "support"),
+            ("Keep going, we support you!", "support"),
+            ("You're making great progress!", "support"),
+            ("Keep it up, you're doing fantastic!", "support"),
             
             # Constructive Criticism
-            ("The animation was okay but the voiceover felt off.", "Constructive Criticism"),
-            ("Good content but could use better lighting.", "Constructive Criticism"),
-            ("I liked the idea but the execution could be improved.", "Constructive Criticism"),
-            ("Nice work, though the audio quality could be better.", "Constructive Criticism"),
-            ("Good effort, but the pacing seemed a bit slow.", "Constructive Criticism"),
-            ("The content is good but needs better organization.", "Constructive Criticism"),
-            ("Decent work, but the transitions could be smoother.", "Constructive Criticism"),
-            ("Good concept, but the delivery could be more engaging.", "Constructive Criticism"),
-            ("Nice try, but the background music was distracting.", "Constructive Criticism"),
-            ("Good work overall, but the ending felt rushed.", "Constructive Criticism"),
-            ("The idea is great, but the presentation needs work.", "Constructive Criticism"),
-            ("Good content, but the visuals could be clearer.", "Constructive Criticism"),
-            ("Nice effort, but the structure could be better.", "Constructive Criticism"),
-            ("Good work, though the tone could be more consistent.", "Constructive Criticism"),
-            ("Decent content, but the length could be optimized.", "Constructive Criticism"),
+            ("The animation was okay but the voiceover felt off.", "constructive_criticism"),
+            ("Good content but could use better lighting.", "constructive_criticism"),
+            ("I liked the idea but the execution could be improved.", "constructive_criticism"),
+            ("Nice work, though the audio quality could be better.", "constructive_criticism"),
+            ("Good effort, but the pacing seemed a bit slow.", "constructive_criticism"),
+            ("The content is good but needs better organization.", "constructive_criticism"),
+            ("Decent work, but the transitions could be smoother.", "constructive_criticism"),
+            ("Good concept, but the delivery could be more engaging.", "constructive_criticism"),
+            ("Nice try, but the background music was distracting.", "constructive_criticism"),
+            ("Good work overall, but the ending felt rushed.", "constructive_criticism"),
+            ("The idea is great, but the presentation needs work.", "constructive_criticism"),
+            ("Good content, but the visuals could be clearer.", "constructive_criticism"),
+            ("Nice effort, but the structure could be better.", "constructive_criticism"),
+            ("Good work, though the tone could be more consistent.", "constructive_criticism"),
+            ("Decent content, but the length could be optimized.", "constructive_criticism"),
             
             # Hate/Abuse
-            ("This is trash, quit now.", "Hate/Abuse"),
-            ("Worst content ever, you suck.", "Hate/Abuse"),
-            ("This is garbage, complete waste of time.", "Hate/Abuse"),
-            ("Terrible work, you're pathetic.", "Hate/Abuse"),
-            ("This is awful, you have no talent.", "Hate/Abuse"),
-            ("Stupid content, you're an idiot.", "Hate/Abuse"),
-            ("This sucks, why do you even try?", "Hate/Abuse"),
-            ("Horrible work, you're useless.", "Hate/Abuse"),
-            ("This is the worst thing I've ever seen.", "Hate/Abuse"),
-            ("Disgusting content, you should be ashamed.", "Hate/Abuse"),
-            ("This is trash, complete failure.", "Hate/Abuse"),
-            ("Terrible quality, you're a joke.", "Hate/Abuse"),
-            ("This is garbage, stop making content.", "Hate/Abuse"),
-            ("Awful work, you have no skills.", "Hate/Abuse"),
-            ("This sucks so bad, give up already.", "Hate/Abuse"),
+            ("This is trash, quit now.", "hate_abuse"),
+            ("Worst content ever, you suck.", "hate_abuse"),
+            ("This is garbage, complete waste of time.", "hate_abuse"),
+            ("Terrible work, you're pathetic.", "hate_abuse"),
+            ("This is awful, you have no talent.", "hate_abuse"),
+            ("Stupid content, you're an idiot.", "hate_abuse"),
+            ("This sucks, why do you even try?", "hate_abuse"),
+            ("Horrible work, you're useless.", "hate_abuse"),
+            ("This is the worst thing I've ever seen.", "hate_abuse"),
+            ("Disgusting content, you should be ashamed.", "hate_abuse"),
+            ("This is trash, complete failure.", "hate_abuse"),
+            ("Terrible quality, you're a joke.", "hate_abuse"),
+            ("This is garbage, stop making content.", "hate_abuse"),
+            ("Awful work, you have no skills.", "hate_abuse"),
+            ("This sucks so bad, give up already.", "hate_abuse"),
             
             # Threat
-            ("I'll report you if this continues.", "Threat"),
-            ("I'm going to sue you for this.", "Threat"),
-            ("I'll make sure everyone knows how bad you are.", "Threat"),
-            ("I'm going to get you shut down.", "Threat"),
-            ("I'll destroy your reputation.", "Threat"),
-            ("I'm reporting this to authorities.", "Threat"),
-            ("I'll make sure you never work again.", "Threat"),
-            ("I'm going to take legal action.", "Threat"),
-            ("I'll ruin your career for this.", "Threat"),
-            ("I'm going to expose you everywhere.", "Threat"),
-            ("I'll make sure you pay for this.", "Threat"),
-            ("I'm going to report you to your boss.", "Threat"),
-            ("I'll get you banned from everywhere.", "Threat"),
-            ("I'm going to make your life miserable.", "Threat"),
-            ("I'll ensure you never succeed.", "Threat"),
+            ("I'll report you if this continues.", "threat"),
+            ("I'm going to sue you for this.", "threat"),
+            ("I'll make sure everyone knows how bad you are.", "threat"),
+            ("I'm going to get you shut down.", "threat"),
+            ("I'll destroy your reputation.", "threat"),
+            ("I'm reporting this to authorities.", "threat"),
+            ("I'll make sure you never work again.", "threat"),
+            ("I'm going to take legal action.", "threat"),
+            ("I'll ruin your career for this.", "threat"),
+            ("I'm going to expose you everywhere.", "threat"),
+            ("I'll make sure you pay for this.", "threat"),
+            ("I'm going to report you to your boss.", "threat"),
+            ("I'll get you banned from everywhere.", "threat"),
+            ("I'm going to make your life miserable.", "threat"),
+            ("I'll ensure you never succeed.", "threat"),
             
             # Emotional
-            ("This reminded me of my childhood.", "Emotional"),
-            ("This made me cry, so touching.", "Emotional"),
-            ("This brings back so many memories.", "Emotional"),
-            ("I'm feeling so nostalgic right now.", "Emotional"),
-            ("This touched my heart deeply.", "Emotional"),
-            ("This made me think of my grandmother.", "Emotional"),
-            ("I'm emotional watching this.", "Emotional"),
-            ("This reminds me of better times.", "Emotional"),
-            ("This brought tears to my eyes.", "Emotional"),
-            ("I'm feeling so connected to this.", "Emotional"),
-            ("This makes me feel so happy.", "Emotional"),
-            ("I'm overwhelmed with emotion.", "Emotional"),
-            ("This reminds me of my late father.", "Emotional"),
-            ("This gives me chills every time.", "Emotional"),
-            ("I'm feeling so inspired right now.", "Emotional"),
+            ("This reminded me of my childhood.", "emotional"),
+            ("This made me cry, so touching.", "emotional"),
+            ("This brings back so many memories.", "emotional"),
+            ("I'm feeling so nostalgic right now.", "emotional"),
+            ("This touched my heart deeply.", "emotional"),
+            ("This made me think of my grandmother.", "emotional"),
+            ("I'm emotional watching this.", "emotional"),
+            ("This reminds me of better times.", "emotional"),
+            ("This brought tears to my eyes.", "emotional"),
+            ("I'm feeling so connected to this.", "emotional"),
+            ("This makes me feel so happy.", "emotional"),
+            ("I'm overwhelmed with emotion.", "emotional"),
+            ("This reminds me of my late father.", "emotional"),
+            ("This gives me chills every time.", "emotional"),
+            ("I'm feeling so inspired right now.", "emotional"),
             
-            # Irrelevant/Spam
-            ("Follow me for followers.", "Irrelevant/Spam"),
-            ("Check out my profile for amazing content!", "Irrelevant/Spam"),
-            ("Subscribe to my channel!", "Irrelevant/Spam"),
-            ("DM me for collaboration opportunities.", "Irrelevant/Spam"),
-            ("Link in bio for exclusive content.", "Irrelevant/Spam"),
-            ("Follow for follow back!", "Irrelevant/Spam"),
-            ("Check out my latest video!", "Irrelevant/Spam"),
-            ("Visit my website for more!", "Irrelevant/Spam"),
-            ("Click here for free stuff!", "Irrelevant/Spam"),
-            ("Follow me on all platforms!", "Irrelevant/Spam"),
-            ("Check my bio for discount codes!", "Irrelevant/Spam"),
-            ("Subscribe for daily updates!", "Irrelevant/Spam"),
-            ("Follow me for lifestyle content!", "Irrelevant/Spam"),
-            ("Check out my store in bio!", "Irrelevant/Spam"),
-            ("DM me for business inquiries!", "Irrelevant/Spam"),
+            # Spam
+            ("Follow me for followers.", "spam"),
+            ("Check out my profile for amazing content!", "spam"),
+            ("Subscribe to my channel!", "spam"),
+            ("DM me for collaboration opportunities.", "spam"),
+            ("Link in bio for exclusive content.", "spam"),
+            ("Follow for follow back!", "spam"),
+            ("Check out my latest video!", "spam"),
+            ("Visit my website for more!", "spam"),
+            ("Click here for free stuff!", "spam"),
+            ("Follow me on all platforms!", "spam"),
+            ("Check my bio for discount codes!", "spam"),
+            ("Subscribe for daily updates!", "spam"),
+            ("Follow me for lifestyle content!", "spam"),
+            ("Check out my store in bio!", "spam"),
+            ("DM me for business inquiries!", "spam"),
             
             # Question/Suggestion
-            ("Can you make one on topic X?", "Question/Suggestion"),
-            ("What software do you use for editing?", "Question/Suggestion"),
-            ("Could you do a tutorial on this?", "Question/Suggestion"),
-            ("How did you create this effect?", "Question/Suggestion"),
-            ("Can you explain the process?", "Question/Suggestion"),
-            ("What's your setup for recording?", "Question/Suggestion"),
-            ("Could you make a behind-the-scenes video?", "Question/Suggestion"),
-            ("What camera do you use?", "Question/Suggestion"),
-            ("Can you share the source files?", "Question/Suggestion"),
-            ("How long did this take to make?", "Question/Suggestion"),
-            ("Could you do a collaboration?", "Question/Suggestion"),
-            ("What's your creative process?", "Question/Suggestion"),
-            ("Can you make more content like this?", "Question/Suggestion"),
-            ("How do you come up with ideas?", "Question/Suggestion"),
-            ("Could you review my work?", "Question/Suggestion"),
+            ("Can you make one on topic X?", "question_suggestion"),
+            ("What software do you use for editing?", "question_suggestion"),
+            ("Could you do a tutorial on this?", "question_suggestion"),
+            ("How did you create this effect?", "question_suggestion"),
+            ("Can you explain the process?", "question_suggestion"),
+            ("What's your setup for recording?", "question_suggestion"),
+            ("Could you make a behind-the-scenes video?", "question_suggestion"),
+            ("What camera do you use?", "question_suggestion"),
+            ("Can you share the source files?", "question_suggestion"),
+            ("How long did this take to make?", "question_suggestion"),
+            ("Could you do a collaboration?", "question_suggestion"),
+            ("What's your creative process?", "question_suggestion"),
+            ("Can you make more content like this?", "question_suggestion"),
+            ("How do you come up with ideas?", "question_suggestion"),
+            ("Could you review my work?", "question_suggestion"),
         ]
         
         df = pd.DataFrame(data, columns=['comment', 'category'])
@@ -231,50 +229,12 @@ class CommentCategorizer:
         
         return ' '.join(tokens)
     
-    def get_tokenizer_and_model(self, model_type):
-        """Return appropriate tokenizer and model based on model type"""
-        if model_type == 'bert':
-            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-            model = BertForSequenceClassification.from_pretrained(
-                'bert-base-uncased', 
-                num_labels=len(self.categories)
-            )
-        elif model_type == 'distilbert':
-            tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
-            model = DistilBertForSequenceClassification.from_pretrained(
-                'distilbert-base-uncased', 
-                num_labels=len(self.categories)
-            )
-        else:
-            return None, None
-        return tokenizer, model
-
-    def prepare_transformer_data(self, X, y, tokenizer, max_length=128):
-        """Prepare data for transformer model training"""
-        encodings = tokenizer(
-            X.tolist(),
-            truncation=True,
-            padding=True,
-            max_length=max_length,
-            return_tensors='pt'
-        )
-        # Convert labels to numerical indices
-        label_map = {cat: idx for idx, cat in enumerate(self.categories.keys())}
-        labels = torch.tensor([label_map[label] for label in y])
-        dataset = TensorDataset(
-            encodings['input_ids'],
-            encodings['attention_mask'],
-            labels
-        )
-        return dataset, label_map
-        
     def prepare_training_data(self):
         """Prepare training data from session state or default"""
         if st.session_state.training_data is not None:
             return st.session_state.training_data
         else:
             return self.default_sample_data
-        
     def train_model(self, model_type='logistic'):
         """Train the classification model"""
         # Get training data
@@ -285,7 +245,7 @@ class CommentCategorizer:
             return None, None
         
         # Preprocess the data
-        X = training_data['comment']  # Don't preprocess for transformers
+        X = training_data['comment'].apply(self.preprocess_text)
         y = training_data['category']
         
         # Split data
@@ -300,14 +260,8 @@ class CommentCategorizer:
             )
 
         st.session_state.model_type = model_type
-        if model_type in ['bert', 'distilbert']:
-            # Skip preprocessing for transformers
-            return self.train_transformer_model(X_train, X_test, y_train, y_test, model_type)
-        else:
-            # Preprocess for traditional models
-            X_train = X_train.apply(self.preprocess_text)
-            X_test = X_test.apply(self.preprocess_text)
-            return self.train_traditional_model(X_train, X_test, y_train, y_test, model_type)
+        return self.train_traditional_model(X_train, X_test, y_train, y_test, model_type)
+
 
     def train_traditional_model(self, X_train, X_test, y_train, y_test, model_type):
         """Train traditional ML models (Logistic or SVM)"""
@@ -327,67 +281,6 @@ class CommentCategorizer:
 
         st.session_state.trained_model = pipeline
         return pipeline, classification_report(y_test, y_pred, output_dict=True)
-    
-    def train_transformer_model(self, X_train, X_test, y_train, y_test, model_type):
-        """Train transformer-based model (BERT or DistilBERT)"""
-        # Get tokenizer and model
-        tokenizer, model = self.get_tokenizer_and_model(model_type)
-        if tokenizer is None or model is None:
-            st.error(f"Invalid model type: {model_type}")
-            return None, None
-
-        # Move model to device
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model = model.to(device)
-
-        # Prepare datasets
-        train_dataset, label_map = self.prepare_transformer_data(X_train, y_train, tokenizer)
-        test_dataset, _ = self.prepare_transformer_data(X_test, y_test, tokenizer)
-
-        # Create data loaders
-        train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-        test_loader = DataLoader(test_dataset, batch_size=16)
-
-        # Training setup
-        optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5)
-        num_epochs = 3  # Adjust based on needs
-
-        # Training loop
-        model.train()
-        for epoch in range(num_epochs):
-            for batch in train_loader:
-                input_ids, attention_mask, labels = [b.to(device) for b in batch]
-                outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
-                loss = outputs.loss
-                loss.backward()
-                optimizer.step()
-                optimizer.zero_grad()
-
-        # Evaluation
-        model.eval()
-        predictions, true_labels = [], []
-        with torch.no_grad():
-            for batch in test_loader:
-                input_ids, attention_mask, labels = [b.to(device) for b in batch]
-                outputs = model(input_ids, attention_mask=attention_mask)
-                preds = torch.argmax(outputs.logits, dim=1)
-                predictions.extend(preds.cpu().numpy())
-                true_labels.extend(labels.cpu().numpy())
-
-        # Convert numerical predictions back to category labels
-        reverse_label_map = {idx: cat for cat, idx in label_map.items()}
-        y_pred = [reverse_label_map[pred] for pred in predictions]
-        y_true = [reverse_label_map[label] for label in true_labels]
-
-        # Store model and related objects
-        pipeline = {
-            'model': model,
-            'tokenizer': tokenizer,
-            'label_map': label_map,
-            'device': device
-        }
-        st.session_state.trained_model = pipeline
-        return pipeline, classification_report(y_true, y_pred, output_dict=True)
 
 
     def classify_comment(self, comment):
@@ -396,40 +289,11 @@ class CommentCategorizer:
             return self.rule_based_classification(comment)
 
         try:
-            model_type = st.session_state.model_type
-            if model_type in ['bert', 'distilbert']:
-                pipeline = st.session_state.trained_model
-                model = pipeline['model']
-                tokenizer = pipeline['tokenizer']
-                label_map = pipeline['label_map']
-                device = pipeline['device']
-
-                # Tokenize input
-                encodings = tokenizer(
-                    [comment],
-                    truncation=True,
-                    padding=True,
-                    max_length=128,
-                    return_tensors='pt'
-                )
-                input_ids = encodings['input_ids'].to(device)
-                attention_mask = encodings['attention_mask'].to(device)
-
-                # Predict
-                model.eval()
-                with torch.no_grad():
-                    outputs = model(input_ids, attention_mask=attention_mask)
-                    probs = torch.softmax(outputs.logits, dim=1)
-                    confidence, pred_idx = probs.max(dim=1)
-                    prediction = list(label_map.keys())[pred_idx.item()]
-                    confidence = confidence.item()
-                return prediction, confidence
-            else:
-                processed_comment = self.preprocess_text(comment)
-                model = st.session_state.trained_model
-                prediction = model.predict([processed_comment])[0]
-                confidence = model.predict_proba([processed_comment]).max()
-                return prediction, confidence
+            processed_comment = self.preprocess_text(comment)
+            model = st.session_state.trained_model
+            prediction = model.predict([processed_comment])[0]
+            confidence = model.predict_proba([processed_comment]).max()
+            return prediction, confidence
         except Exception as e:
             st.error(f"Error in classification: {str(e)}")
             return self.rule_based_classification(comment)
@@ -439,21 +303,21 @@ class CommentCategorizer:
         """Rule-based fallback classifier"""
         text = comment.lower()
         patterns = {
-            'Praise': r'\b(amazing|awesome|fantastic|great|excellent|perfect|love|loved|brilliant|outstanding|incredible|wonderful|beautiful|superb|magnificent)\b',
-            'Support': r'\b(keep going|Support|encourage|you can do it|don\'t give up|proud of you|rooting for you|believe in you|stay strong|keep up)\b',
-            'Constructive Criticism': r'\b(but|however|though|could|might|suggest|improve|better|feedback|okay but|good but|nice but)\b',
-            'Hate/Abuse': r'\b(trash|hate|terrible|awful|worst|stupid|idiot|sucks|garbage|pathetic|useless|quit|failure|disgusting)\b',
-            'Threat': r'\b(report|sue|legal action|shut down|destroy|ruin|expose|authorities|banned|take down|make sure you)\b',
-            'Emotional': r'\b(reminds me|childhood|memories|feel|feeling|Emotional|tears|nostalgic|brings back|touched|heart|cry)\b',
-            'Irrelevant/Spam': r'\b(follow me|subscribe|check out|my channel|my profile|dm me|click here|link in bio|follow for follow|visit my)\b',
-            'Question/Suggestion': r'\b(can you|could you|how do|what|when|where|tutorial|guide|suggestion|\?)\b'
+            'praise': r'\b(amazing|awesome|fantastic|great|excellent|perfect|love|loved|brilliant|outstanding|incredible|wonderful|beautiful|superb|magnificent)\b',
+            'support': r'\b(keep going|support|encourage|you can do it|don\'t give up|proud of you|rooting for you|believe in you|stay strong|keep up)\b',
+            'constructive_criticism': r'\b(but|however|though|could|might|suggest|improve|better|feedback|okay but|good but|nice but)\b',
+            'hate_abuse': r'\b(trash|hate|terrible|awful|worst|stupid|idiot|sucks|garbage|pathetic|useless|quit|failure|disgusting)\b',
+            'threat': r'\b(report|sue|legal action|shut down|destroy|ruin|expose|authorities|banned|take down|make sure you)\b',
+            'emotional': r'\b(reminds me|childhood|memories|feel|feeling|emotional|tears|nostalgic|brings back|touched|heart|cry)\b',
+            'spam': r'\b(follow me|subscribe|check out|my channel|my profile|dm me|click here|link in bio|follow for follow|visit my)\b',
+            'question_suggestion': r'\b(can you|could you|how do|what|when|where|tutorial|guide|suggestion|\?)\b'
         }
 
         for category, pattern in patterns.items():
             if re.search(pattern, text):
                 return category, 0.8
 
-        return 'Support', 0.5  # default fallback
+        return 'support', 0.5  # default fallback
 
 def main():
     st.set_page_config(
@@ -565,7 +429,7 @@ def main():
             manual_training_input = st.text_area(
                 "Training data:",
                 height=200,
-                placeholder="Amazing work!|Praise\nThis needs improvement|Constructive Criticism\nWhat software do you use?|Question/Suggestion"
+                placeholder="Amazing work!|praise\nThis needs improvement|constructive_criticism\nWhat software do you use?|question_suggestion"
             )
             
             if st.button("💾 Load Manual Training Data"):
@@ -609,7 +473,7 @@ def main():
         st.subheader("🔧 Model Settings")
         model_type = st.selectbox(
             "Choose Model:", 
-            ["logistic", "svm", "bert", "distilbert"],
+            ["logistic", "svm"],
             help="Traditional ML models (Logistic Regression, SVM) or Transformer models (BERT, DistilBERT)"
         )
         
@@ -617,7 +481,6 @@ def main():
             with st.spinner(f"Training {model_type.upper()} model..."):
                 model, report = categorizer.train_model(model_type)
                 if model and report:
-                    st.session_state.model_performance = report  # Store report
                     st.success("✅ Model trained successfully!")
                     
                     # Show training metrics
@@ -922,14 +785,14 @@ def generate_analysis_report(df, categorizer):
     if low_confidence_count > total_comments * 0.2:
         report += "- Consider retraining the model with more diverse training data\n"
     
-    if 'Hate/Abuse' in category_counts and category_counts['Hate/Abuse'] > 0:
-        report += f"- {category_counts['Hate/Abuse']} comments were classified as hate/abuse and may need immediate attention\n"
+    if 'hate_abuse' in category_counts and category_counts['hate_abuse'] > 0:
+        report += f"- {category_counts['hate_abuse']} comments were classified as hate/abuse and may need immediate attention\n"
     
-    if 'Threat' in category_counts and category_counts['Threat'] > 0:
-        report += f"- {category_counts['Threat']} comments were classified as Threats and should be reviewed urgently\n"
+    if 'threat' in category_counts and category_counts['threat'] > 0:
+        report += f"- {category_counts['threat']} comments were classified as threats and should be reviewed urgently\n"
     
-    if 'Irrelevant/Spam' in category_counts and category_counts['Irrelevant/Spam'] > total_comments * 0.3:
-        report += "- High Irrelevant/Spam rate detected - consider implementing Irrelevant/Spam filters\n"
+    if 'spam' in category_counts and category_counts['spam'] > total_comments * 0.3:
+        report += "- High spam rate detected - consider implementing spam filters\n"
     
     st.markdown(report)
     
@@ -955,49 +818,21 @@ def add_clear_button():
             clear_results()
 
 # Add this to the main function after the model training section
-def classify_comment(self, comment):
-    """Classify a single comment"""
-    if st.session_state.get("trained_model") is None:
-        return self.rule_based_classification(comment)
-
-    try:
-        model_type = st.session_state.model_type
-        if model_type in ['bert', 'distilbert']:
-            pipeline = st.session_state.trained_model
-            model = pipeline['model']
-            tokenizer = pipeline['tokenizer']
-            label_map = pipeline['label_map']
-            device = pipeline['device']
-
-            # Tokenize input
-            encodings = tokenizer(
-                [comment],
-                truncation=True,
-                padding=True,
-                max_length=128,
-                return_tensors='pt'
-            )
-            input_ids = encodings['input_ids'].to(device)
-            attention_mask = encodings['attention_mask'].to(device)
-
-            # Predict
-            model.eval()
-            with torch.no_grad():
-                outputs = model(input_ids, attention_mask=attention_mask)
-                probs = torch.softmax(outputs.logits, dim=1)
-                confidence, pred_idx = probs.max(dim=1)
-                prediction = list(label_map.keys())[pred_idx.item()]
-                confidence = confidence.item()
-            return prediction, confidence
-        else:
-            processed_comment = self.preprocess_text(comment)
-            model = st.session_state.trained_model
-            prediction = model.predict([processed_comment])[0]
-            confidence = model.predict_proba([processed_comment]).max()
-            return prediction, confidence
-    except Exception as e:
-        st.error(f"Error in classification: {str(e)}")
-        return self.rule_based_classification(comment)
+def display_model_info():
+    """Display current model information"""
+    if st.session_state.trained_model is not None:
+        st.divider()
+        st.subheader("🤖 Current Model")
+        st.success(f"✅ {st.session_state.model_type.upper()} model is trained and ready!")
+        
+        # Show model performance if available
+        if hasattr(st.session_state, 'model_performance'):
+            st.write("Model Performance:")
+            st.json(st.session_state.model_performance)
+    else:
+        st.divider()
+        st.subheader("🤖 Current Model")
+        st.warning("⚠️ No model trained yet. Using rule-based classification.")
 
 if __name__ == "__main__":
     main()
