@@ -774,7 +774,7 @@ def display_results(results, categorizer):
         y=category_counts.values,
         title="Comment Count by Category",
         labels={'x': 'Category', 'y': 'Count'},
-        # color=category_counts.index,
+        color=category_counts.index,
         color_discrete_map={cat: categorizer.categories.get(cat, {}).get('color', '#000000') 
                            for cat in category_counts.index}
     )
